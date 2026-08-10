@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v5"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v6"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -532,7 +532,8 @@ function renderHistory() {
     if (has) cls.push("has");
     if (iso === todayIso) cls.push("today");
     const attr = has ? ` data-day="${iso}"` : "";
-    cells += `<div class="${cls.join(" ")}"${attr}><span class="cal-num">${d}</span>${has ? '<span class="cal-dot"></span>' : ""}</div>`;
+    const tags = has ? has.map(s => "т" + s.workoutId).join(" ") : "";
+    cells += `<div class="${cls.join(" ")}"${attr}><span class="cal-num">${d}</span>${has ? `<span class="cal-tag">${esc(tags)}</span>` : ""}</div>`;
   }
 
   // Список сессий этого месяца (по датам, новые сверху)
