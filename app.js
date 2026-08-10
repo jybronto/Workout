@@ -12,6 +12,8 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+const APP_VERSION = "v4 · 2026-08-10"; // повышается при каждом пуше — видно, что обновление доехало
+
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -91,13 +93,20 @@ authBtn.addEventListener("click", async () => {
     return;
   }
   const provider = new GoogleAuthProvider();
-  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  provider.setCustomParameters({ prompt: "select_account" }); // всегда показывать выбор аккаунта
   try {
-    if (isMobile) await signInWithRedirect(auth, provider);
-    else await signInWithPopup(auth, provider);
+    await signInWithPopup(auth, provider);
   } catch (e) {
     console.error(e);
-    setSync("Не удалось войти: " + (e.code || e.message), "err");
+    // Всплывающее окно недоступно/заблокировано — пробуем через редирект
+    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request"].includes(e.code)) {
+      try { await signInWithRedirect(auth, provider); }
+      catch (e2) { setSync("Не удалось войти: " + (e2.code || e2.message), "err"); }
+    } else if (e.code === "auth/popup-closed-by-user") {
+      // пользователь закрыл окно — молчим
+    } else {
+      setSync("Не удалось войти: " + (e.code || e.message), "err");
+    }
   }
 });
 
@@ -152,23 +161,28 @@ async function saveNow() {
   if (!user) { setSync("Войдите, чтобы сохранять в облако", "err"); return; }
   clearTimeout(saveTimer);
   const id = sid(current.date, current.workoutId);
+  // Сохраняем только упражнения, которые пользователь реально трогал (не подсказки-заготовки)
+  const entries = {};
+  for (const [name, e] of Object.entries(current.draft.entries)) {
+    if (!e.touched) continue;
+    const sets = (e.sets || []).filter(s => (s.w ?? "") !== "" || (s.r ?? "") !== "");
+    if (sets.length) entries[name] = { sets };
+  }
   const payload = {
     date: current.date,
     workoutId: current.workoutId,
     workoutName: current.workout.name,
-    entries: current.draft.entries,
+    entries,
     notes: current.draft.notes || "",
     updatedAt: serverTimestamp(),
   };
   try {
     setSync("Сохранение…");
-    // Удалить документ, если всё пусто
-    const hasData = current.draft.notes ||
-      Object.values(current.draft.entries).some(e => (e.sets || []).some(s => s.w || s.r) || e.done);
+    const hasData = current.draft.notes || Object.keys(entries).length;
     if (!hasData) {
       await deleteDoc(doc(db, "users", user.uid, "sessions", id)).catch(() => {});
     } else {
-      await setDoc(doc(db, "users", user.uid, "sessions", id), payload, { merge: true });
+      await setDoc(doc(db, "users", user.uid, "sessions", id), payload);
     }
     dirty = false;
     setSync("Сохранено ✓", "ok");
@@ -190,7 +204,15 @@ function updateSaveBtn() {
 }
 
 // ---------- Draft build ----------
-function blankEntry() { return { sets: [{ w: "", r: "" }], done: false }; }
+function blankEntry() { return { sets: [{ w: "", r: "" }], touched: true, prefill: false }; }
+
+// Первый заполненный подход из прошлой тренировки этого упражнения
+function prevFirstSet(workoutId, exName, beforeDate) {
+  const last = lastSetsFor(workoutId, exName, beforeDate);
+  if (!last) return null;
+  const s = (last.sets || []).find(x => x.w || x.r);
+  return s ? { w: s.w || "", r: s.r || "" } : null;
+}
 
 function loadDraftFromCloud() {
   const id = sid(current.date, current.workoutId);
@@ -199,9 +221,16 @@ function loadDraftFromCloud() {
   for (const ex of current.workout.exercises) {
     if (isCardio(ex)) continue;
     const s = saved && saved.entries && saved.entries[ex.name];
-    entries[ex.name] = s
-      ? { sets: (s.sets && s.sets.length ? s.sets.map(x => ({ w: x.w ?? "", r: x.r ?? "" })) : [{ w: "", r: "" }]), done: !!s.done }
-      : blankEntry();
+    if (s && s.sets && s.sets.length) {
+      // Уже есть сохранённые данные за этот день
+      entries[ex.name] = { sets: s.sets.map(x => ({ w: x.w ?? "", r: x.r ?? "" })), touched: true, prefill: false };
+    } else {
+      // Нет данных за сегодня — подставим первый подход из прошлой тренировки (если была)
+      const pre = prevFirstSet(current.workoutId, ex.name, current.date);
+      entries[ex.name] = pre
+        ? { sets: [{ w: pre.w, r: pre.r }], touched: false, prefill: true }
+        : { sets: [{ w: "", r: "" }], touched: false, prefill: false };
+    }
   }
   current.draft = { entries, notes: (saved && saved.notes) || "" };
   dirty = false;
@@ -240,6 +269,7 @@ function renderHome() {
       </div>`;
     }
   }
+  html += `<div class="version">Версия ${esc(APP_VERSION)}</div>`;
   appEl.innerHTML = html;
   appEl.querySelectorAll("[data-open]").forEach(el =>
     el.addEventListener("click", () => openWorkout(+el.dataset.open)));
@@ -310,10 +340,13 @@ function renderExercise(ex) {
       if (summary) lastHtml = `<div class="last">Прошлый раз (${fmtDate(last.date)}): <b>${esc(summary)}</b></div>`;
     }
     const entry = current.draft.entries[ex.name] || blankEntry();
+    const isPre = !entry.touched && entry.prefill;
     let rows = "";
     entry.sets.forEach((s, i) => { rows += setRow(ex.name, i, s); });
+    const preNote = isPre ? `<div class="prefill-note">↑ значения с прошлого раза — поправь под сегодня</div>` : "";
     body = `${lastHtml}
-      <div class="sets" data-sets="${esc(ex.name)}">${rows}</div>
+      <div class="sets${isPre ? " prefill" : ""}" data-sets="${esc(ex.name)}">${rows}</div>
+      ${preNote}
       <button class="add-set" data-addset="${esc(ex.name)}">+ подход</button>`;
   }
 
@@ -359,20 +392,16 @@ function bindWorkoutEvents() {
     el.addEventListener("click", () => window.open(el.dataset.video, "_blank", "noopener")));
 
   // Ввод веса/повторов
-  appEl.querySelectorAll("input[data-inp]").forEach(inp => {
-    inp.addEventListener("input", e => {
-      const { ex, i, inp: field } = e.target.dataset;
-      const entry = current.draft.entries[ex];
-      entry.sets[+i][field] = e.target.value;
-      scheduleSave();
-    });
-  });
+  appEl.querySelectorAll("input[data-inp]").forEach(inp => inp.addEventListener("input", onSetInput));
 
-  // Добавить подход
+  // Добавить подход — копируем значения из последнего подхода
   appEl.querySelectorAll("[data-addset]").forEach(btn =>
     btn.addEventListener("click", () => {
       const ex = btn.dataset.addset;
-      current.draft.entries[ex].sets.push({ w: "", r: "" });
+      const entry = current.draft.entries[ex];
+      const last = entry.sets[entry.sets.length - 1] || { w: "", r: "" };
+      entry.sets.push({ w: last.w ?? "", r: last.r ?? "" });
+      entry.touched = true; entry.prefill = false;
       scheduleSave();
       rerenderSets(ex);
     }));
@@ -387,6 +416,22 @@ function bindWorkoutEvents() {
   $("#saveBtn").addEventListener("click", saveNow);
 }
 
+function onSetInput(e) {
+  const { ex, i, inp: field } = e.target.dataset;
+  const entry = current.draft.entries[ex];
+  entry.sets[+i][field] = e.target.value;
+  if (!entry.touched) {
+    entry.touched = true; entry.prefill = false;
+    const cont = appEl.querySelector(`[data-sets="${cssEsc(ex)}"]`);
+    if (cont) {
+      cont.classList.remove("prefill");
+      const n = cont.parentElement.querySelector(".prefill-note");
+      if (n) n.remove();
+    }
+  }
+  scheduleSave();
+}
+
 function onDelClick(e) {
   const btn = e.target.closest("[data-del]");
   if (!btn) return;
@@ -394,6 +439,7 @@ function onDelClick(e) {
   const entry = current.draft.entries[ex];
   entry.sets.splice(+btn.dataset.i, 1);
   if (!entry.sets.length) entry.sets.push({ w: "", r: "" });
+  entry.touched = true; entry.prefill = false;
   scheduleSave();
   rerenderSets(ex);
 }
@@ -403,13 +449,10 @@ function rerenderSets(exName) {
   if (!cont) { render(); return; }
   const entry = current.draft.entries[exName];
   cont.innerHTML = entry.sets.map((s, i) => setRow(exName, i, s)).join("");
-  cont.querySelectorAll("input[data-inp]").forEach(inp => {
-    inp.addEventListener("input", e => {
-      const { ex, i, inp: field } = e.target.dataset;
-      current.draft.entries[ex].sets[+i][field] = e.target.value;
-      scheduleSave();
-    });
-  });
+  cont.querySelectorAll("input[data-inp]").forEach(inp => inp.addEventListener("input", onSetInput));
+  cont.classList.toggle("prefill", !entry.touched && entry.prefill);
+  const note = cont.parentElement.querySelector(".prefill-note");
+  if (note && entry.touched) note.remove();
   updateSaveBtn();
 }
 

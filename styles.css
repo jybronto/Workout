@@ -156,6 +156,10 @@ input[type=date]{
 .modal-body p{margin:0 0 12px}
 .modal-body hr{border:none;border-top:1px solid var(--line);margin:14px 0}
 
+.sets.prefill input{color:var(--muted)}
+.prefill-note{font-size:12px;color:var(--warn);margin:6px 2px 0}
+.version{text-align:center;color:var(--muted);font-size:12px;margin:26px 0 8px;opacity:.7}
+
 .empty{color:var(--muted);text-align:center;padding:40px 20px}
 .signin-hint{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:16px;margin-bottom:16px;font-size:14px;color:var(--muted)}
