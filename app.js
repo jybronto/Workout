@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v8"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v9"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -272,7 +272,7 @@ function renderHome() {
     for (const w of b.workouts) {
       const last = lastDoneDate(w.id);
       const nEx = w.exercises.filter(e => !isCardio(e)).length;
-      const lastHtml = last ? ` · <span class="last-done">послед.: ${fmtDate(last)}</span>` : "";
+      const lastHtml = last ? ` · <span class="last-done">${fmtDate(last)}</span>` : "";
       html += `<div class="wcard" data-open="${w.id}">
         <div class="wcard-main">
           <div class="wcard-name">${esc(w.name)}</div>

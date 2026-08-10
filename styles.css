@@ -196,5 +196,5 @@ input[type=date]{
 .signin-hint b{color:var(--text)}
 
 @media (min-width:620px){
-  .set-field input{max-width:160px}
+  .set-field{max-width:170px}
 }
