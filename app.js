@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v4 · 2026-08-10"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v5"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -40,6 +40,8 @@ let unsub = null;           // firestore listener
 let current = null;         // {workoutId, date, block, workout, draft}
 let saveTimer = null;
 let dirty = false;
+let view = "home";          // 'home' | 'workout' | 'history'
+let histMonth = null;       // Date (первое число отображаемого месяца) для истории
 
 // ---------- DOM refs ----------
 const appEl = $("#app");
@@ -47,6 +49,7 @@ const backBtn = $("#backBtn");
 const topTitle = $("#topTitle");
 const authBtn = $("#authBtn");
 const syncBar = $("#syncBar");
+$("#ver").textContent = APP_VERSION;
 
 // ---------- Helpers ----------
 function todayISO() {
@@ -240,7 +243,8 @@ function isCardio(ex) { return !ex.video && /кардио/i.test(ex.name); }
 
 // ---------- Views ----------
 function render() {
-  if (current) renderWorkout();
+  if (view === "workout" && current) renderWorkout();
+  else if (view === "history") renderHistory();
   else renderHome();
 }
 
@@ -269,7 +273,6 @@ function renderHome() {
       </div>`;
     }
   }
-  html += `<div class="version">Версия ${esc(APP_VERSION)}</div>`;
   appEl.innerHTML = html;
   appEl.querySelectorAll("[data-open]").forEach(el =>
     el.addEventListener("click", () => openWorkout(+el.dataset.open)));
@@ -279,11 +282,12 @@ function countDone(workoutId) {
   return Object.values(sessions).filter(s => s.workoutId === workoutId).length;
 }
 
-function openWorkout(id) {
+function openWorkout(id, date) {
   const fw = findWorkout(id);
   if (!fw) return;
-  current = { workoutId: id, date: todayISO(), block: fw.block, workout: fw.workout, draft: null };
+  current = { workoutId: id, date: date || todayISO(), block: fw.block, workout: fw.workout, draft: null };
   loadDraftFromCloud();
+  view = "workout";
   window.scrollTo(0, 0);
   render();
 }
@@ -291,6 +295,16 @@ function openWorkout(id) {
 function goHome() {
   if (dirty && user) saveNow();
   current = null;
+  view = "home";
+  window.scrollTo(0, 0);
+  render();
+}
+
+function openHistory() {
+  if (dirty && user) saveNow();
+  histMonth = histMonth || startOfMonth(new Date());
+  view = "history";
+  window.scrollTo(0, 0);
   render();
 }
 
@@ -458,8 +472,114 @@ function rerenderSets(exName) {
 
 function cssEsc(s) { return s.replace(/["\\]/g, "\\$&"); }
 
+// ---------- История / календарь ----------
+const MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const WD = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+
+function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function isoOf(d) {
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+}
+function sessionSummary(s) {
+  const entries = s.entries || {};
+  const nEx = Object.keys(entries).length;
+  let nSets = 0;
+  for (const e of Object.values(entries)) nSets += (e.sets || []).length;
+  const parts = [];
+  if (nEx) parts.push(`${nEx} упр.`);
+  if (nSets) parts.push(`${nSets} подх.`);
+  return parts.join(" · ");
+}
+
+function renderHistory() {
+  backBtn.classList.remove("hidden");
+  topTitle.textContent = "История";
+  document.title = "История тренировок";
+
+  if (!fbReady) {
+    appEl.innerHTML = `<div class="signin-hint"><b>Firebase не настроен.</b> История доступна после настройки дневника.</div>`;
+    return;
+  }
+  if (!user) {
+    appEl.innerHTML = `<div class="signin-hint"><b>Войдите</b>, чтобы видеть историю. Здесь появятся все проведённые тренировки по датам.</div>`;
+    return;
+  }
+
+  // Карта дата -> список сессий
+  const byDate = {};
+  for (const s of Object.values(sessions)) {
+    if (!s.date) continue;
+    (byDate[s.date] = byDate[s.date] || []).push(s);
+  }
+
+  const m = histMonth;
+  const year = m.getFullYear(), month = m.getMonth();
+  const todayIso = todayISO();
+
+  // Сетка календаря (Пн..Вс)
+  const first = new Date(year, month, 1);
+  let startWd = (first.getDay() + 6) % 7; // 0 = Пн
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  let cells = "";
+  for (const w of WD) cells += `<div class="cal-wd">${w}</div>`;
+  for (let i = 0; i < startWd; i++) cells += `<div class="cal-cell empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = isoOf(new Date(year, month, d));
+    const has = byDate[iso];
+    const cls = ["cal-cell"];
+    if (has) cls.push("has");
+    if (iso === todayIso) cls.push("today");
+    const attr = has ? ` data-day="${iso}"` : "";
+    cells += `<div class="${cls.join(" ")}"${attr}><span class="cal-num">${d}</span>${has ? '<span class="cal-dot"></span>' : ""}</div>`;
+  }
+
+  // Список сессий этого месяца (по датам, новые сверху)
+  const monthSessions = Object.values(sessions)
+    .filter(s => s.date && s.date.slice(0, 7) === `${year}-${String(month + 1).padStart(2, "0")}`)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+  let list = "";
+  if (monthSessions.length) {
+    for (const s of monthSessions) {
+      list += `<div class="hist-item" data-open="${s.workoutId}" data-date="${s.date}">
+        <div class="hist-date">${fmtDate(s.date)}</div>
+        <div class="hist-main">
+          <div class="hist-name">${esc(s.workoutName || ("Тренировка " + s.workoutId))}</div>
+          <div class="hist-sub">${esc(sessionSummary(s))}</div>
+        </div>
+        <span class="wcard-chev">›</span>
+      </div>`;
+    }
+  } else {
+    list = `<div class="empty">В этом месяце тренировок нет</div>`;
+  }
+
+  appEl.innerHTML = `
+    <div class="cal-head">
+      <button class="icon-btn" id="calPrev" aria-label="Предыдущий месяц">‹</button>
+      <div class="cal-title">${MONTHS[month]} ${year}</div>
+      <button class="icon-btn" id="calNext" aria-label="Следующий месяц">›</button>
+    </div>
+    <div class="cal-grid">${cells}</div>
+    <div class="hist-list">${list}</div>`;
+
+  $("#calPrev").addEventListener("click", () => { histMonth = new Date(year, month - 1, 1); render(); });
+  $("#calNext").addEventListener("click", () => { histMonth = new Date(year, month + 1, 1); render(); });
+  appEl.querySelectorAll("[data-day]").forEach(el =>
+    el.addEventListener("click", () => {
+      const iso = el.dataset.day;
+      const list = byDate[iso] || [];
+      if (list.length) openWorkout(list[0].workoutId, iso);
+    }));
+  appEl.querySelectorAll(".hist-item").forEach(el =>
+    el.addEventListener("click", () => openWorkout(+el.dataset.open, el.dataset.date)));
+}
+
 // ---------- Nav / modal ----------
 backBtn.addEventListener("click", goHome);
+$("#calBtn").addEventListener("click", openHistory);
 $("#helpBtn").addEventListener("click", () => $("#helpModal").classList.remove("hidden"));
 $("#helpModal").addEventListener("click", e => {
   if (e.target.id === "helpModal" || e.target.hasAttribute("data-close-help"))
