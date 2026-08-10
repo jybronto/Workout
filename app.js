@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v9"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v10"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -344,6 +344,9 @@ function renderWorkout() {
   }
 
   html += `<textarea class="note-input" id="wnote" placeholder="Заметка к тренировке (самочувствие, что менять…)">${esc(current.draft.notes || "")}</textarea>`;
+  if (user && sessions[sid(current.date, current.workoutId)]) {
+    html += `<button class="del-session" id="delSession">Удалить эту тренировку за ${fmtDate(current.date)}</button>`;
+  }
   html += `<div style="height:70px"></div>`;
   html += `<div class="save-fab"><button id="saveBtn">Сохранить</button></div>`;
 
@@ -427,7 +430,7 @@ function warmRowHtml(exName, w) {
       <input type="text" inputmode="numeric" placeholder="повт." value="${esc(w.r ?? "")}"
         data-warm="r" data-ex="${esc(exName)}" />
     </div>
-    <span class="warm-spacer" aria-hidden="true"></span>
+    <button class="set-del" data-warmdel="${esc(exName)}" aria-label="Очистить разминку">✕</button>
   </div>`;
 }
 
@@ -465,11 +468,46 @@ function bindWorkoutEvents() {
   // Удалить подход
   appEl.addEventListener("click", onDelClick);
 
+  // Очистить разминочный подход
+  appEl.querySelectorAll("[data-warmdel]").forEach(btn =>
+    btn.addEventListener("click", () => {
+      const ex = btn.dataset.warmdel;
+      const entry = current.draft.entries[ex];
+      entry.warm = { w: "", r: "" };
+      entry.touched = true;
+      appEl.querySelectorAll(`input[data-warm][data-ex="${cssEsc(ex)}"]`).forEach(i => (i.value = ""));
+      scheduleSave();
+    }));
+
   // Заметка
   $("#wnote").addEventListener("input", e => { current.draft.notes = e.target.value; scheduleSave(); });
 
   // Сохранить
   $("#saveBtn").addEventListener("click", saveNow);
+
+  // Удалить всю тренировку за этот день
+  const del = $("#delSession");
+  if (del) del.addEventListener("click", deleteSession);
+}
+
+async function deleteSession() {
+  const id = sid(current.date, current.workoutId);
+  if (!user || !sessions[id]) { goHome(); return; }
+  if (!confirm(`Удалить запись этой тренировки за ${fmtDate(current.date)}? Все введённые подходы будут стёрты.`)) return;
+  try {
+    clearTimeout(saveTimer);
+    await deleteDoc(doc(db, "users", user.uid, "sessions", id));
+    delete sessions[id];
+    setSync("Тренировка удалена ✓", "ok");
+    setTimeout(() => { if (!dirty) setSync(""); }, 1800);
+  } catch (e) {
+    console.error(e);
+    setSync("Не удалось удалить: " + (e.code || e.message), "err");
+    return;
+  }
+  dirty = false;
+  loadDraftFromCloud(); // вернёт пустые поля / подсказки
+  render();
 }
 
 function onSetInput(e) {
