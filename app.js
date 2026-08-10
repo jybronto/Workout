@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v7"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v8"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -168,8 +168,15 @@ async function saveNow() {
   const entries = {};
   for (const [name, e] of Object.entries(current.draft.entries)) {
     if (!e.touched) continue;
-    const sets = (e.sets || []).filter(s => (s.w ?? "") !== "" || (s.r ?? "") !== "");
-    if (sets.length) entries[name] = { sets };
+    // Рабочие подходы: если это ещё нетронутая подсказка (prefill) — не сохраняем
+    const sets = e.prefill ? [] : (e.sets || []).filter(s => (s.w ?? "") !== "" || (s.r ?? "") !== "");
+    const warm = (e.warm && ((e.warm.w ?? "") !== "" || (e.warm.r ?? "") !== "")) ? { w: e.warm.w, r: e.warm.r } : null;
+    if (sets.length || warm) {
+      const rec = {};
+      if (sets.length) rec.sets = sets;
+      if (warm) rec.warm = warm;
+      entries[name] = rec;
+    }
   }
   const payload = {
     date: current.date,
@@ -224,15 +231,17 @@ function loadDraftFromCloud() {
   for (const ex of current.workout.exercises) {
     if (isCardio(ex)) continue;
     const s = saved && saved.entries && saved.entries[ex.name];
-    if (s && s.sets && s.sets.length) {
+    const warm = (s && s.warm) ? { w: s.warm.w ?? "", r: s.warm.r ?? "" } : { w: "", r: "" };
+    if (s && ((s.sets && s.sets.length) || s.warm)) {
       // Уже есть сохранённые данные за этот день
-      entries[ex.name] = { sets: s.sets.map(x => ({ w: x.w ?? "", r: x.r ?? "" })), touched: true, prefill: false };
+      const sets = (s.sets && s.sets.length) ? s.sets.map(x => ({ w: x.w ?? "", r: x.r ?? "" })) : [{ w: "", r: "" }];
+      entries[ex.name] = { sets, warm, touched: true, prefill: false };
     } else {
-      // Нет данных за сегодня — подставим первый подход из прошлой тренировки (если была)
+      // Нет данных за сегодня — подставим первый рабочий подход из прошлой тренировки (если была)
       const pre = prevFirstSet(current.workoutId, ex.name, current.date);
       entries[ex.name] = pre
-        ? { sets: [{ w: pre.w, r: pre.r }], touched: false, prefill: true }
-        : { sets: [{ w: "", r: "" }], touched: false, prefill: false };
+        ? { sets: [{ w: pre.w, r: pre.r }], warm, touched: false, prefill: true }
+        : { sets: [{ w: "", r: "" }], warm, touched: false, prefill: false };
     }
   }
   current.draft = { entries, notes: (saved && saved.notes) || "" };
@@ -261,14 +270,15 @@ function renderHome() {
   for (const b of DATA.blocks) {
     html += `<div class="block-title">${esc(b.title)}</div>`;
     for (const w of b.workouts) {
-      const done = countDone(w.id);
+      const last = lastDoneDate(w.id);
       const nEx = w.exercises.filter(e => !isCardio(e)).length;
+      const lastHtml = last ? ` · <span class="last-done">послед.: ${fmtDate(last)}</span>` : "";
       html += `<div class="wcard" data-open="${w.id}">
         <div class="wcard-main">
           <div class="wcard-name">${esc(w.name)}</div>
-          <div class="wcard-sub">${nEx} упр.${done ? ` · записей: ${done}` : ""}</div>
+          <div class="wcard-sub">${nEx} упр.${lastHtml}</div>
         </div>
-        ${done ? '<span class="dot" title="Есть записи"></span>' : ""}
+        ${last ? '<span class="dot" title="Есть записи"></span>' : ""}
         <span class="wcard-chev">›</span>
       </div>`;
     }
@@ -280,6 +290,15 @@ function renderHome() {
 
 function countDone(workoutId) {
   return Object.values(sessions).filter(s => s.workoutId === workoutId).length;
+}
+
+// Дата последнего выполнения тренировки (или null)
+function lastDoneDate(workoutId) {
+  let max = null;
+  for (const s of Object.values(sessions)) {
+    if (s.workoutId === workoutId && s.date && (!max || s.date > max)) max = s.date;
+  }
+  return max;
 }
 
 function openWorkout(id, date) {
@@ -355,16 +374,18 @@ function renderExercise(ex) {
     }
     const entry = current.draft.entries[ex.name] || blankEntry();
     const isPre = !entry.touched && entry.prefill;
+    const warmRow = ex.warmup ? warmRowHtml(ex.name, entry.warm || { w: "", r: "" }) : "";
     let rows = "";
     entry.sets.forEach((s, i) => { rows += setRow(ex.name, i, s); });
-    const preNote = isPre ? `<div class="prefill-note">↑ значения с прошлого раза — поправь под сегодня</div>` : "";
+    const preNote = isPre ? `<div class="prefill-note">↑ рабочие веса с прошлого раза — поправь под сегодня</div>` : "";
     body = `${lastHtml}
+      ${warmRow}
       <div class="sets${isPre ? " prefill" : ""}" data-sets="${esc(ex.name)}">${rows}</div>
       ${preNote}
       <button class="add-set" data-addset="${esc(ex.name)}">+ подход</button>`;
   }
 
-  return `<div class="ex${ex.warmup ? " warm" : ""}">
+  return `<div class="ex">
     <div class="ex-head">
       <div class="ex-titlewrap">
         <div class="${nameCls}" ${ex.video ? `data-video="${esc(ex.video)}"` : ""}>${esc(ex.name)}${yt}</div>
@@ -392,6 +413,24 @@ function setRow(exName, i, s) {
   </div>`;
 }
 
+// Разминочный подход (жёлтая строка) — только для упражнений с разминкой
+function warmRowHtml(exName, w) {
+  return `<div class="set-row warm-row">
+    <span class="set-idx warm-idx" title="Разминочный подход">Р</span>
+    <div class="set-field">
+      <input type="text" inputmode="decimal" placeholder="вес" value="${esc(w.w ?? "")}"
+        data-warm="w" data-ex="${esc(exName)}" />
+      <span class="unit">кг</span>
+    </div>
+    <span class="set-x">×</span>
+    <div class="set-field">
+      <input type="text" inputmode="numeric" placeholder="повт." value="${esc(w.r ?? "")}"
+        data-warm="r" data-ex="${esc(exName)}" />
+    </div>
+    <span class="warm-spacer" aria-hidden="true"></span>
+  </div>`;
+}
+
 function bindWorkoutEvents() {
   // Дата
   $("#wdate").addEventListener("change", e => {
@@ -407,6 +446,9 @@ function bindWorkoutEvents() {
 
   // Ввод веса/повторов
   appEl.querySelectorAll("input[data-inp]").forEach(inp => inp.addEventListener("input", onSetInput));
+
+  // Ввод разминочного подхода
+  appEl.querySelectorAll("input[data-warm]").forEach(inp => inp.addEventListener("input", onWarmInput));
 
   // Добавить подход — копируем значения из последнего подхода
   appEl.querySelectorAll("[data-addset]").forEach(btn =>
@@ -434,8 +476,9 @@ function onSetInput(e) {
   const { ex, i, inp: field } = e.target.dataset;
   const entry = current.draft.entries[ex];
   entry.sets[+i][field] = e.target.value;
-  if (!entry.touched) {
-    entry.touched = true; entry.prefill = false;
+  entry.touched = true;
+  if (entry.prefill) { // тронули рабочий подход — это уже не подсказка
+    entry.prefill = false;
     const cont = appEl.querySelector(`[data-sets="${cssEsc(ex)}"]`);
     if (cont) {
       cont.classList.remove("prefill");
@@ -443,6 +486,15 @@ function onSetInput(e) {
       if (n) n.remove();
     }
   }
+  scheduleSave();
+}
+
+function onWarmInput(e) {
+  const { ex, warm: field } = e.target.dataset;
+  const entry = current.draft.entries[ex];
+  if (!entry.warm) entry.warm = { w: "", r: "" };
+  entry.warm[field] = e.target.value;
+  entry.touched = true; // рабочие подходы при этом остаются подсказкой (prefill не трогаем)
   scheduleSave();
 }
 

@@ -74,6 +74,7 @@ main{max-width:760px;margin:0 auto;padding:14px 12px 60px}
 .wcard-main{flex:1;min-width:0}
 .wcard-name{font-weight:600}
 .wcard-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.last-done{color:var(--accent);font-weight:600}
 .wcard-chev{color:var(--muted);font-size:22px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--good);flex:0 0 auto}
 
@@ -90,7 +91,10 @@ input[type=date]{
   background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:14px;margin-bottom:12px;
 }
-.ex.warm{border-color:#5a4d1f;box-shadow:inset 4px 0 0 var(--warn);background:rgba(255,207,77,.05)}
+.set-row.warm-row input{background:rgba(255,207,77,.12);border-color:#5a4d1f}
+.warm-idx{color:#111;background:var(--warn);font-weight:800;font-size:12px;
+  border-radius:6px;height:26px;line-height:26px}
+.warm-spacer{width:var(--tap);flex:0 0 auto}
 .ex-head{display:flex;align-items:flex-start;gap:10px}
 .ex-titlewrap{flex:1;min-width:0}
 .ex-name{font-weight:600;font-size:16px}
