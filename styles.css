@@ -90,6 +90,7 @@ input[type=date]{
   background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   padding:14px;margin-bottom:12px;
 }
+.ex.warm{border-color:#5a4d1f;box-shadow:inset 4px 0 0 var(--warn);background:rgba(255,207,77,.05)}
 .ex-head{display:flex;align-items:flex-start;gap:10px}
 .ex-titlewrap{flex:1;min-width:0}
 .ex-name{font-weight:600;font-size:16px}
@@ -98,7 +99,7 @@ input[type=date]{
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--muted);border:1px solid var(--line)}
 .badge.scheme{color:var(--text);border-color:#3a4150}
-.badge.warm{color:var(--warn);border-color:#4a4326}
+.badge.warm{color:#111;background:var(--warn);border-color:var(--warn);font-weight:700}
 .badge.zdo{color:var(--accent)}
 
 .last{font-size:13px;color:var(--muted);margin:10px 0 6px;
@@ -164,7 +165,7 @@ input[type=date]{
 .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:22px}
 .cal-wd{text-align:center;color:var(--muted);font-size:12px;padding-bottom:4px}
 .cal-cell{position:relative;aspect-ratio:1;border-radius:10px;background:var(--card);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
   color:var(--text);font-size:14px;line-height:1;padding:2px;overflow:hidden}
 .cal-cell.empty{background:transparent}
 .cal-cell.today{outline:2px solid var(--accent2);outline-offset:-2px}

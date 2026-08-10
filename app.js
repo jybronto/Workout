@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v6"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v7"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -141,9 +141,9 @@ function subscribeSessions() {
   unsub = onSnapshot(col, snap => {
     sessions = {};
     snap.forEach(d => { sessions[d.id] = d.data(); });
-    // Обновить открытую тренировку данными из облака, не затирая текущий несохранённый ввод
-    if (current && !dirty) loadDraftFromCloud();
-    render();
+    // Пока идёт редактирование тренировки — НЕ перерисовываем (иначе слетает курсор).
+    // Обновляем список/историю только на других экранах.
+    if (view !== "workout") render();
   }, err => {
     console.error(err);
     setSync("Ошибка синхронизации: " + err.code, "err");
@@ -156,7 +156,7 @@ function scheduleSave() {
   updateSaveBtn();
   if (!user) return;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveNow, 1200);
+  saveTimer = setTimeout(saveNow, 10000); // автосохранение через 10 сек после последнего ввода
 }
 
 async function saveNow() {
@@ -338,7 +338,7 @@ function renderExercise(ex) {
   const nameCls = ex.video ? "ex-name link" : "ex-name";
   const yt = ex.video ? `<span class="yt">▶ видео</span>` : "";
   let badges = "";
-  if (ex.warmup) badges += `<span class="badge warm">Р разминка</span>`;
+  if (ex.warmup) badges += `<span class="badge warm">Разминка</span>`;
   if (ex.scheme) badges += `<span class="badge scheme">${esc(ex.scheme)}</span>`;
   if (ex.rest) badges += `<span class="badge">отдых ${esc(ex.rest)}</span>`;
   if (ex.zdo && ex.zdo !== "-") badges += `<span class="badge zdo">ЗДО ${esc(ex.zdo)}</span>`;
@@ -364,7 +364,7 @@ function renderExercise(ex) {
       <button class="add-set" data-addset="${esc(ex.name)}">+ подход</button>`;
   }
 
-  return `<div class="ex">
+  return `<div class="ex${ex.warmup ? " warm" : ""}">
     <div class="ex-head">
       <div class="ex-titlewrap">
         <div class="${nameCls}" ${ex.video ? `data-video="${esc(ex.video)}"` : ""}>${esc(ex.name)}${yt}</div>
@@ -532,7 +532,7 @@ function renderHistory() {
     if (has) cls.push("has");
     if (iso === todayIso) cls.push("today");
     const attr = has ? ` data-day="${iso}"` : "";
-    const tags = has ? has.map(s => "т" + s.workoutId).join(" ") : "";
+    const tags = has ? has.map(s => "т-" + s.workoutId).join(" ") : "";
     cells += `<div class="${cls.join(" ")}"${attr}><span class="cal-num">${d}</span>${has ? `<span class="cal-tag">${esc(tags)}</span>` : ""}</div>`;
   }
 
