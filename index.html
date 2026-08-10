@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1115" />
+  <title>Дневник тренировок</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <button id="backBtn" class="icon-btn hidden" aria-label="Назад">‹</button>
+    <div class="topbar-title" id="topTitle">Тренировки</div>
+    <button id="helpBtn" class="icon-btn" aria-label="Справка">?</button>
+    <button id="authBtn" class="auth-btn">Войти</button>
+  </header>
+
+  <div id="syncBar" class="sync-bar hidden"></div>
+
+  <main id="app"></main>
+
+  <!-- Help / legend modal -->
+  <div id="helpModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Обозначения</h2>
+        <button class="icon-btn" data-close-help>✕</button>
+      </div>
+      <div class="modal-body">
+        <p><b>Р (+)</b> — сначала сделай разминочные подходы: от лёгкого к рабочему весу, снижая повторения.</p>
+        <p><b>3х6-8</b> — 3 подхода по 6–8 повторений.</p>
+        <p><b>3х12-10-8</b> — «пирамида»: с подхода к подходу добавляешь вес и снижаешь повторения.</p>
+        <p><b>ЗДО</b> — «Запас До Отказа»: сколько повторений остаётся до отказа. <b>ЗДО 0</b> — в отказ, <b>ЗДО 1</b> — за 1 повтор до отказа.</p>
+        <p><b>Дропсет</b> — длинный подход: рабочий вес → сброс ~30% без отдыха → ещё сброс ~30% на максимум.</p>
+        <p><b>Суперсет</b> — два упражнения подряд без отдыха = один подход.</p>
+        <p class="muted">Прогрессия весов — главное. Записывай вес и повторы каждую тренировку и старайся расти.</p>
+        <hr/>
+        <p><b>Разминка:</b>
+          <a href="https://www.youtube.com/shorts/NgP5ePNPF8I" target="_blank" rel="noopener">верх тела</a> ·
+          <a href="https://www.youtube.com/shorts/syQ_R_G6sX8" target="_blank" rel="noopener">низ тела</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="firebase-config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
