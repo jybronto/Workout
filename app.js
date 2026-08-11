@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v10"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v11"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -475,6 +475,7 @@ function bindWorkoutEvents() {
       const entry = current.draft.entries[ex];
       entry.warm = { w: "", r: "" };
       entry.touched = true;
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       appEl.querySelectorAll(`input[data-warm][data-ex="${cssEsc(ex)}"]`).forEach(i => (i.value = ""));
       scheduleSave();
     }));
@@ -551,12 +552,16 @@ function onDelClick(e) {
 function rerenderSets(exName) {
   const cont = appEl.querySelector(`[data-sets="${cssEsc(exName)}"]`);
   if (!cont) { render(); return; }
+  // iOS Safari не перерисовывает поле, которое было в фокусе, при замене HTML — снимаем фокус
+  const active = document.activeElement;
+  if (active && cont.contains(active) && active.blur) active.blur();
   const entry = current.draft.entries[exName];
   cont.innerHTML = entry.sets.map((s, i) => setRow(exName, i, s)).join("");
   cont.querySelectorAll("input[data-inp]").forEach(inp => inp.addEventListener("input", onSetInput));
   cont.classList.toggle("prefill", !entry.touched && entry.prefill);
   const note = cont.parentElement.querySelector(".prefill-note");
   if (note && entry.touched) note.remove();
+  void cont.offsetHeight; // форсируем перерисовку
   updateSaveBtn();
 }
 
