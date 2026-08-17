@@ -39,7 +39,9 @@
     .wcard-name{font-weight:600}
     .wcard-sub{font-size:13px;color:var(--muted);margin-top:2px}
     .wcard-chev{color:var(--muted);font-size:22px}
-    .ex{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+    .ex-list{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+    .ex-item{padding:14px 16px;border-top:1px solid var(--line)}
+    .ex-item:first-child{border-top:none}
     .ex-num{color:var(--muted);font-size:13px;font-weight:700;margin-bottom:2px}
     .ex-name{font-weight:600;font-size:16px}
     .ex-name.link{color:var(--accent2);cursor:pointer}
@@ -143,7 +145,7 @@
     function renderWorkout(){
       backBtn.classList.remove("hidden");
       topTitle.textContent = current.name;
-      let html = "";
+      let items = "";
       let n = 0;
       for (const ex of current.exercises){
         const cardio = isCardio(ex);
@@ -155,13 +157,13 @@
         if (ex.scheme) badges += `<span class="badge scheme">${esc(ex.scheme)}</span>`;
         if (ex.rest) badges += `<span class="badge">отдых ${esc(ex.rest)}</span>`;
         if (ex.zdo && ex.zdo !== "-") badges += `<span class="badge zdo">ЗДО ${esc(ex.zdo)}</span>`;
-        html += `<div class="ex">
+        items += `<div class="ex-item">
           <div class="ex-num">${cardio ? "" : n}</div>
           <div class="${nameCls}" ${ex.video ? `data-video="${esc(ex.video)}"` : ""}>${esc(ex.name)}${yt}</div>
           ${cardio ? `<div class="cardio-note">${esc(ex.scheme || "")}</div>` : `<div class="badges">${badges}</div>`}
         </div>`;
       }
-      appEl.innerHTML = html;
+      appEl.innerHTML = `<div class="ex-list">${items}</div>`;
       appEl.querySelectorAll("[data-video]").forEach(el =>
         el.addEventListener("click", () => window.open(el.dataset.video, "_blank", "noopener")));
     }
