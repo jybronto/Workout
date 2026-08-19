@@ -96,6 +96,9 @@ input[type=date]{
   border-radius:6px;height:26px;line-height:26px}
 .warm-spacer{width:var(--tap);flex:0 0 auto}
 .ex-head{display:flex;align-items:flex-start;gap:10px}
+.ex-ico{width:46px;height:46px;flex:0 0 auto;border-radius:10px;background:var(--bg2);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.ex-ico svg{width:32px;height:32px}
 .ex-titlewrap{flex:1;min-width:0}
 .ex-name{font-weight:600;font-size:16px}
 .ex-name.link{color:var(--accent2);cursor:pointer}

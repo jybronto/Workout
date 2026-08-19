@@ -40,8 +40,12 @@
     .wcard-sub{font-size:13px;color:var(--muted);margin-top:2px}
     .wcard-chev{color:var(--muted);font-size:22px}
     .ex-list{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-    .ex-item{padding:14px 16px;border-top:1px solid var(--line)}
+    .ex-item{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-top:1px solid var(--line)}
     .ex-item:first-child{border-top:none}
+    .ex-ico{width:46px;height:46px;flex:0 0 auto;border-radius:10px;background:var(--card2);
+      border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+    .ex-ico svg{width:32px;height:32px}
+    .ex-body{flex:1;min-width:0}
     .ex-num{color:var(--muted);font-size:13px;font-weight:700;margin-bottom:2px}
     .ex-name{font-weight:600;font-size:16px}
     .ex-name.link{color:var(--accent2);cursor:pointer}
@@ -98,6 +102,7 @@
   </div>
 
   <script src="data.js?v=11"></script>
+  <script src="icons.js?v=12"></script>
   <script>
     const DATA = window.WORKOUT_DATA;
     const $ = (s, r = document) => r.querySelector(s);
@@ -158,9 +163,12 @@
         if (ex.rest) badges += `<span class="badge">отдых ${esc(ex.rest)}</span>`;
         if (ex.zdo && ex.zdo !== "-") badges += `<span class="badge zdo">ЗДО ${esc(ex.zdo)}</span>`;
         items += `<div class="ex-item">
-          <div class="ex-num">${cardio ? "" : n}</div>
-          <div class="${nameCls}" ${ex.video ? `data-video="${esc(ex.video)}"` : ""}>${esc(ex.name)}${yt}</div>
-          ${cardio ? `<div class="cardio-note">${esc(ex.scheme || "")}</div>` : `<div class="badges">${badges}</div>`}
+          <div class="ex-ico">${window.exerciseIcon(ex.name)}</div>
+          <div class="ex-body">
+            <div class="ex-num">${cardio ? "" : n}</div>
+            <div class="${nameCls}" ${ex.video ? `data-video="${esc(ex.video)}"` : ""}>${esc(ex.name)}${yt}</div>
+            ${cardio ? `<div class="cardio-note">${esc(ex.scheme || "")}</div>` : `<div class="badges">${badges}</div>`}
+          </div>
         </div>`;
       }
       appEl.innerHTML = `<div class="ex-list">${items}</div>`;

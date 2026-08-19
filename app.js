@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v11"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v12"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
@@ -388,8 +388,10 @@ function renderExercise(ex) {
       <button class="add-set" data-addset="${esc(ex.name)}">+ подход</button>`;
   }
 
+  const ico = window.exerciseIcon ? `<div class="ex-ico">${window.exerciseIcon(ex.name)}</div>` : "";
   return `<div class="ex">
     <div class="ex-head">
+      ${ico}
       <div class="ex-titlewrap">
         <div class="${nameCls}" ${ex.video ? `data-video="${esc(ex.video)}"` : ""}>${esc(ex.name)}${yt}</div>
         <div class="badges">${badges}</div>
