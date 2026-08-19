@@ -1,34 +1,45 @@
-// Иконки-снаряды в едином стиле (SVG, обводка = currentColor).
-// exerciseIcon(name) подбирает иконку по ключевым словам в названии упражнения.
+// Пиктограммы-человечки по типу движения (оригинальные SVG, единый стиль).
+// exerciseIcon(name) подбирает движение по ключевым словам в названии упражнения.
 (function () {
-  const s = 'viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"';
+  const A = 'viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"';
+  const dot = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="currentColor" stroke="none"/>`;
+
   const ICONS = {
-    // Гантель
-    dumbbell: `<svg ${s}><rect x="18" y="21.5" width="12" height="5" rx="1" fill="currentColor" stroke="none"/><rect x="8" y="14" width="6" height="20" rx="2"/><rect x="14" y="18" width="4" height="12" rx="1.5"/><rect x="30" y="18" width="4" height="12" rx="1.5"/><rect x="34" y="14" width="6" height="20" rx="2"/></svg>`,
-    // Штанга / Смит
-    barbell: `<svg ${s}><line x1="5" y1="24" x2="43" y2="24"/><rect x="10.5" y="15" width="5" height="18" rx="1.5"/><rect x="16" y="18" width="3.5" height="12" rx="1.2"/><rect x="28.5" y="18" width="3.5" height="12" rx="1.2"/><rect x="32.5" y="15" width="5" height="18" rx="1.5"/></svg>`,
-    // Блок / трос / кроссовер
-    cable: `<svg ${s}><line x1="8" y1="9" x2="40" y2="9"/><circle cx="24" cy="13" r="3.2"/><line x1="24" y1="16.4" x2="24" y2="30"/><line x1="14" y1="32" x2="34" y2="32"/><line x1="14" y1="32" x2="14" y2="37"/><line x1="34" y1="32" x2="34" y2="37"/></svg>`,
-    // Тренажёр (стек)
-    machine: `<svg ${s}><rect x="16" y="9" width="16" height="30" rx="2"/><line x1="16" y1="16" x2="32" y2="16"/><line x1="16" y1="22" x2="32" y2="22"/><line x1="16" y1="28" x2="32" y2="28"/><line x1="24" y1="28" x2="24" y2="34"/></svg>`,
-    // Свой вес (турник)
-    pullup: `<svg ${s}><line x1="7" y1="11" x2="41" y2="11"/><path d="M16 11v6a3 3 0 0 0 6 0"/><path d="M26 11v6a3 3 0 0 0 6 0"/><circle cx="24" cy="29" r="3"/><path d="M24 32v8"/></svg>`,
+    // Жим лёжа / грудь
+    chest: `<svg ${A}><line x1="7" y1="39" x2="33" y2="39" stroke-width="3.4"/>${dot(12, 34, 4)}<path d="M15 35h13"/><path d="M28 35l7 4"/><path d="M23 35l2-9"/><line x1="17" y1="25" x2="33" y2="25" stroke-width="3.2"/>${dot(17, 25, 2.4)}${dot(33, 25, 2.4)}</svg>`,
+    // Жим над головой / плечи
+    shoulder: `<svg ${A}>${dot(24, 13, 4)}<path d="M24 17v11"/><path d="M24 28l-6 11M24 28l6 11"/><path d="M24 20l-8-6M24 20l8-6"/><line x1="11" y1="9" x2="37" y2="9" stroke-width="3.4"/>${dot(11, 9, 2.6)}${dot(37, 9, 2.6)}</svg>`,
+    // Махи / дельты
+    delts: `<svg ${A}>${dot(24, 11, 4)}<path d="M24 15v13"/><path d="M24 17l-9 2M24 17l9 2"/><path d="M24 28l-4 11M24 28l4 11"/>${dot(13, 18, 3.2)}${dot(35, 18, 3.2)}</svg>`,
+    // Тяга сверху / подтягивания
+    pulldown: `<svg ${A}><line x1="9" y1="9" x2="39" y2="9" stroke-width="3.4"/><path d="M18 10l5 7M30 10l-5 7"/>${dot(24, 21, 4)}<path d="M24 25v8"/><path d="M24 33l-5 8M24 33l5 8"/></svg>`,
+    // Тяга в наклоне / горизонтальная
+    row: `<svg ${A}>${dot(11, 15, 4)}<path d="M13 18l17 5"/><path d="M14 20l-2 18"/><path d="M30 23l-1 15"/><path d="M30 23l-5 6"/><line x1="24" y1="29" x2="35" y2="32" stroke-width="3.2"/>${dot(35, 32, 2.6)}</svg>`,
+    // Бицепс
+    curl: `<svg ${A}>${dot(19, 12, 4)}<path d="M19 16v13"/><path d="M19 29l-4 10M19 29l4 10"/><path d="M19 21l8 3-2 6"/>${dot(25, 30, 3.2)}</svg>`,
+    // Трицепс
+    triceps: `<svg ${A}><line x1="31" y1="7" x2="31" y2="18" stroke-width="3.2"/>${dot(20, 12, 4)}<path d="M20 16v13"/><path d="M20 29l-4 10M20 29l4 10"/><path d="M20 20l7 1"/><path d="M27 21l2 7"/>${dot(29, 29, 2.8)}</svg>`,
+    // Ноги / присед
+    legs: `<svg ${A}>${dot(24, 8, 3.6)}<line x1="13" y1="14" x2="35" y2="14" stroke-width="3.4"/>${dot(13, 14, 2.6)}${dot(35, 14, 2.6)}<path d="M24 12v9"/><path d="M24 21l-8 7v11M24 21l8 7v11"/></svg>`,
+    // Пресс / подъёмы ног в висе
+    abs: `<svg ${A}><line x1="9" y1="9" x2="39" y2="9" stroke-width="3.4"/><path d="M19 10l5 6M29 10l-5 6"/>${dot(24, 19, 3.8)}<path d="M24 23v5"/><path d="M24 28h9"/><path d="M33 28v-6"/></svg>`,
     // Кардио
-    cardio: `<svg ${s}><path d="M24 38s-12-7-12-16a7 7 0 0 1 12-4 7 7 0 0 1 12 4c0 9-12 16-12 16z"/></svg>`,
-    // По умолчанию (гиря)
-    default: `<svg ${s}><path d="M19 18a5 5 0 0 1 10 0"/><path d="M17 18h14a3 3 0 0 1 3 3c0 8-4 17-10 17s-10-9-10-17a3 3 0 0 1 3-3z"/></svg>`,
+    cardio: `<svg viewBox="0 0 48 48" fill="currentColor"><path d="M24 39s-13-7.6-13-17.2C11 16 15 12.5 19.4 12.5c2.6 0 4.6 1.3 5.6 3 1-1.7 3-3 5.6-3C35 12.5 39 16 39 21.8 39 31.4 24 39 24 39z"/></svg>`,
   };
 
   function iconKey(name) {
     const n = (name || "").toLowerCase();
     if (/кардио/.test(n)) return "cardio";
-    if (/подтягив|в висе|отжиман/.test(n)) return "pullup";
-    if (/гантел|молотк/.test(n)) return "dumbbell";
-    if (/хаммер|peck|пек-дек|тренажер|жим ногами|разгибания ног|сгибания ног|сведения ног|разведения ног/.test(n)) return "machine";
-    if (/блок|кроссовер|молитва|канат/.test(n)) return "cable";
-    if (/смит|штанг|гриф|мертвая|присед|французск|протяжк/.test(n)) return "barbell";
-    return "default";
+    if (/молитва|в висе|скручиван|пресс/.test(n)) return "abs";
+    if (/бицепс|молотк|сгибания рук/.test(n)) return "curl";
+    if (/трицепс|французск|разгибания в блоке|разгибания из-за|разгибания с двух|узким хватом|отжимания с упором/.test(n)) return "triceps";
+    if (/присед|выпад|жим ногами|разгибания ног|сгибания ног|носки|мертвая|румынск|гакк|ягодич/.test(n)) return "legs";
+    if (/подтягив|вертикальн|пуловер|пулловер|тяга верхн/.test(n)) return "pulldown";
+    if (/мах|отведение|протяжк|задн|разведение|подъемы рук/.test(n)) return "delts";
+    if (/тяга|горизонтальн/.test(n)) return "row";
+    if (/жим.*сид|жим гантелей сид/.test(n)) return "shoulder";
+    return "chest";
   }
 
-  window.exerciseIcon = name => ICONS[iconKey(name)] || ICONS.default;
+  window.exerciseIcon = name => ICONS[iconKey(name)] || ICONS.chest;
 })();
