@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1115" />
+  <title>Журнал ваг · Boreyko UA</title>
+  <style>
+    :root{
+      --bg:#0f1115;--bg2:#171a21;--card:#1c2029;--card2:#232833;--line:#2c313d;
+      --text:#e9edf4;--muted:#9aa4b4;--accent:#ff6a3d;--accent2:#3d9bff;--warn:#ffcf4d;--good:#35c07a;
+      --radius:14px;--tap:46px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);
+      font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      padding-bottom:env(safe-area-inset-bottom);-webkit-text-size-adjust:100%}
+    a{color:var(--accent2)}
+    .hidden{display:none !important}
+    .muted{color:var(--muted)}
+    .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;
+      padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;
+      background:rgba(15,17,21,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+    .title-wrap{flex:1;min-width:0;display:flex;align-items:baseline;gap:7px}
+    .topbar-title{font-weight:700;font-size:18px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tag{flex:0 0 auto;font-size:12px;color:var(--muted);font-weight:600}
+    .icon-btn{width:var(--tap);height:var(--tap);flex:0 0 auto;border:none;background:var(--card);
+      color:var(--text);border-radius:12px;font-size:22px;line-height:1;cursor:pointer;
+      display:flex;align-items:center;justify-content:center}
+    .icon-btn:active{background:var(--card2)}
+    .auth-btn{border:none;background:var(--accent);color:#111;font-weight:700;padding:0 14px;height:var(--tap);
+      border-radius:12px;cursor:pointer;font-size:14px;white-space:nowrap}
+    .auth-btn.signed{background:var(--card);color:var(--text);font-weight:600}
+    .sync-bar{font-size:13px;padding:7px 14px;text-align:center;background:var(--bg2);color:var(--muted);border-bottom:1px solid var(--line)}
+    .sync-bar.err{color:var(--warn)} .sync-bar.ok{color:var(--good)}
+    main{max-width:760px;margin:0 auto;padding:14px 12px 40px}
+    .block-title{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:22px 4px 10px;font-weight:700}
+    .block-title:first-child{margin-top:6px}
+    .wcard{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+      border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;cursor:pointer}
+    .wcard:active{background:var(--card2)}
+    .wcard-main{flex:1;min-width:0}
+    .wcard-name{font-weight:600}
+    .wcard-sub{font-size:13px;color:var(--muted);margin-top:2px}
+    .wcard-chev{color:var(--muted);font-size:22px}
+    .ex{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+    .ex-head{display:flex;align-items:flex-start;gap:12px}
+    .ex-ico{width:46px;height:46px;flex:0 0 auto;border-radius:10px;background:var(--bg2);
+      border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+    .ex-ico svg{width:32px;height:32px}
+    .ex-tw{flex:1;min-width:0}
+    .ex-name{font-weight:600;font-size:16px}
+    .ex-name.link{color:var(--accent2);cursor:pointer}
+    .ex-name .yt{font-size:12px;color:var(--muted);margin-left:6px}
+    .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+    .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--muted);border:1px solid var(--line)}
+    .badge.scheme{color:var(--text);border-color:#3a4150;font-weight:600}
+    .badge.warm{color:#111;background:var(--warn);border-color:var(--warn);font-weight:700}
+    .badge.zdo{color:var(--accent)}
+    .wlog{display:flex;align-items:center;gap:10px;margin-top:12px}
+    .wt{flex:0 0 auto;width:120px;background:var(--bg2);border:1px solid var(--line);color:var(--text);
+      border-radius:10px;padding:10px;font-size:17px;height:var(--tap);text-align:center;font-weight:700}
+    .wt:disabled{opacity:.5}
+    .wt-unit{color:var(--muted);font-size:14px}
+    .wt-date{flex:1;min-width:0;font-size:13px;color:var(--muted);text-align:right}
+    .wt-date b{color:var(--good)}
+    .hist-toggle{margin-top:10px;font-size:13px;color:var(--accent2);cursor:pointer;display:inline-block}
+    .hist{margin-top:8px;border-top:1px solid var(--line)}
+    .hist-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
+    .hist-row .d{width:96px;flex:0 0 auto;color:var(--muted)}
+    .hist-row .w{flex:1;font-weight:600}
+    .hist-del{border:none;background:var(--card2);color:var(--muted);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:15px}
+    .hist-del:active{background:#3a2020;color:#ff8a6a}
+    .cardio-note{color:var(--muted);font-size:14px;margin-top:8px}
+    .signin-hint{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;font-size:14px;color:var(--muted)}
+    .signin-hint b{color:var(--text)}
+    .app-link{display:block;text-align:center;margin:20px 4px 4px;font-size:14px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <button id="backBtn" class="icon-btn hidden" aria-label="Назад">‹</button>
+    <div class="title-wrap">
+      <span class="topbar-title" id="topTitle">Журнал ваг</span>
+      <span class="tag">Boreyko</span>
+    </div>
+    <button id="authBtn" class="auth-btn">Увійти</button>
+  </header>
+  <div id="syncBar" class="sync-bar hidden"></div>
+  <main id="app"></main>
+
+  <script src="data-ua.js?v=15"></script>
+  <script src="icons.js?v=15"></script>
+  <script src="firebase-config.js?v=15"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, enableIndexedDbPersistence, serverTimestamp }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const DATA = window.WORKOUT_DATA_UA;
+    const $ = (s, r = document) => r.querySelector(s);
+    const appEl = $("#app"), backBtn = $("#backBtn"), topTitle = $("#topTitle"), authBtn = $("#authBtn"), syncBar = $("#syncBar");
+
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+    const isCardio = ex => !ex.video && /кардіо/i.test(ex.name);
+    const exKey = name => name.toLowerCase().replace(/[.#$/\[\]]/g, "_").replace(/\s+/g," ").trim();
+    function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+    function fmt(iso){ const [y,m,d]=iso.split("-"); return `${d}.${m}.${y}`; }
+    const openHist = {}; // exKey -> bool (розгорнута історія)
+
+    // ---- Firebase ----
+    let auth=null, db=null, user=null, fbReady=false, ref=null;
+    let log={}, logJSON="{}", unsub=null;
+    let view="home", current=null;
+
+    const cfg = window.FIREBASE_CONFIG;
+    if (cfg && cfg.apiKey && !String(cfg.apiKey).includes("ВСТАВЬ")) {
+      try {
+        const app = initializeApp(cfg, "ua-weights");
+        auth=getAuth(app); db=getFirestore(app);
+        enableIndexedDbPersistence(db).catch(()=>{});
+        fbReady=true;
+      } catch(e){ console.error(e); }
+    }
+
+    function setSync(t,c=""){ if(!t){syncBar.classList.add("hidden");return;} syncBar.textContent=t; syncBar.className="sync-bar "+c; }
+
+    authBtn.addEventListener("click", async () => {
+      if(!fbReady){ setSync("Firebase не налаштовано","err"); return; }
+      if(user){ if(confirm("Вийти з акаунта?")) await signOut(auth); return; }
+      const p=new GoogleAuthProvider(); p.setCustomParameters({prompt:"select_account"});
+      try{ await signInWithPopup(auth,p); }
+      catch(e){
+        if(["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/cancelled-popup-request"].includes(e.code)){
+          try{ await signInWithRedirect(auth,p); }catch(e2){ setSync("Не вдалось увійти: "+(e2.code||e2.message),"err"); }
+        } else if(e.code!=="auth/popup-closed-by-user"){ setSync("Не вдалось увійти: "+(e.code||e.message),"err"); }
+      }
+    });
+
+    if(fbReady){
+      getRedirectResult(auth).catch(()=>{});
+      onAuthStateChanged(auth, u => {
+        user=u;
+        if(u){
+          authBtn.textContent="Вийти"; authBtn.classList.add("signed");
+          ref=doc(db,"users",u.uid,"programs","ua_weights");
+          if(unsub) unsub();
+          unsub=onSnapshot(ref, snap => {
+            const incoming=(snap.exists()&&snap.data().log)||{};
+            const s=JSON.stringify(incoming);
+            if(s===logJSON) return;
+            log=incoming; logJSON=s; render();
+          }, err=>setSync("Помилка синхронізації: "+err.code,"err"));
+          setSync("Синхронізовано з хмарою ✓","ok"); setTimeout(()=>setSync(""),2200);
+        } else {
+          authBtn.textContent="Увійти"; authBtn.classList.remove("signed");
+          if(unsub){ unsub(); unsub=null; } log={}; logJSON="{}"; ref=null; setSync("");
+        }
+        render();
+      });
+    }
+
+    async function persist(){
+      logJSON=JSON.stringify(log);
+      if(!user||!ref) return;
+      try{ setSync("Збереження…"); await setDoc(ref,{log,updatedAt:serverTimestamp()}); setSync("Збережено ✓","ok"); setTimeout(()=>setSync(""),1400); }
+      catch(e){ setSync("Не збережено: "+(e.code||e.message),"err"); }
+    }
+
+    // ---- Логіка ваги ----
+    function latestOf(k){ const a=log[k]||[]; if(!a.length) return null; return a.slice().sort((x,y)=>x.d<y.d?1:-1)[0]; }
+    function recordWeight(k,w){
+      w=String(w).trim().replace(",",".");
+      if(w==="") return;
+      const a=log[k]||(log[k]=[]);
+      const t=todayISO();
+      const te=a.find(e=>e.d===t);
+      if(te) te.w=w; else a.push({d:t,w});
+      persist(); if(view==="workout") renderWorkout();
+    }
+    function deleteEntry(k,d){
+      log[k]=(log[k]||[]).filter(e=>e.d!==d);
+      if(!log[k].length) delete log[k];
+      persist(); if(view==="workout") renderWorkout();
+    }
+
+    // ---- Views ----
+    function render(){ view==="workout"&&current ? renderWorkout() : renderHome(); }
+
+    function findWorkout(id){ for(const b of DATA.blocks) for(const w of b.workouts) if(w.id===id) return w; return null; }
+
+    function renderHome(){
+      backBtn.classList.add("hidden"); topTitle.textContent="Журнал ваг"; document.title="Журнал ваг · Boreyko UA";
+      let html="";
+      if(fbReady && !user) html+=`<div class="signin-hint"><b>Увійдіть</b>, щоб записувати ваги — вони зберігаються з датою і синхронізуються між телефоном і комп'ютером. Кнопка «Увійти» вгорі.</div>`;
+      else if(!fbReady) html+=`<div class="signin-hint"><b>Firebase не налаштовано.</b> Журнал недоступний.</div>`;
+      for(const b of DATA.blocks){
+        html+=`<div class="block-title">${esc(b.title)}</div>`;
+        for(const w of b.workouts){
+          const nEx=w.exercises.filter(e=>!isCardio(e)).length;
+          const filled=w.exercises.filter(e=>!isCardio(e)&&latestOf(exKey(e.name))).length;
+          html+=`<div class="wcard" data-open="${w.id}">
+            <div class="wcard-main"><div class="wcard-name">${esc(w.name)}</div>
+            <div class="wcard-sub">${nEx} вправ${filled?` · записано: ${filled}`:""}</div></div>
+            <span class="wcard-chev">›</span></div>`;
+        }
+      }
+      html+=`<a class="app-link" href="program-ua.html">→ Ця ж програма (без журналу)</a>`;
+      appEl.innerHTML=html;
+      appEl.querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",()=>{current=findWorkout(+el.dataset.open);view="workout";window.scrollTo(0,0);renderWorkout();}));
+    }
+
+    function renderWorkout(){
+      backBtn.classList.remove("hidden"); topTitle.textContent=current.name; document.title=current.name;
+      let html="", n=0;
+      for(const ex of current.exercises){
+        const cardio=isCardio(ex); if(!cardio) n++;
+        const k=exKey(ex.name);
+        const nameCls=ex.video?"ex-name link":"ex-name";
+        const yt=ex.video?`<span class="yt">▶ відео</span>`:"";
+        let badges="";
+        if(ex.warmup) badges+=`<span class="badge warm">Розминка</span>`;
+        if(ex.scheme) badges+=`<span class="badge scheme">${esc(ex.scheme)}</span>`;
+        if(ex.rest) badges+=`<span class="badge">відпочинок ${esc(ex.rest)}</span>`;
+        if(ex.zdo&&ex.zdo!=="-") badges+=`<span class="badge zdo">ЗДВ ${esc(ex.zdo)}</span>`;
+
+        let body="";
+        if(cardio){ body=`<div class="cardio-note">${esc(ex.scheme||"")}</div>`; }
+        else {
+          const arr=(log[k]||[]).slice().sort((x,y)=>x.d<y.d?1:-1);
+          const latest=arr[0];
+          const dateLbl=latest?`оновлено <b>${fmt(latest.d)}</b>`:`ще не записано`;
+          const dis=user?"":"disabled";
+          let hist="";
+          if(arr.length){
+            const open=openHist[k];
+            hist+=`<div class="hist-toggle" data-hist="${esc(k)}">${open?"приховати історію ▲":`історія (${arr.length}) ▾`}</div>`;
+            if(open){
+              hist+=`<div class="hist">`;
+              for(const e of arr) hist+=`<div class="hist-row"><span class="d">${fmt(e.d)}</span><span class="w">${esc(e.w)} кг</span><button class="hist-del" data-del="${esc(k)}" data-d="${e.d}" aria-label="Видалити">✕</button></div>`;
+              hist+=`</div>`;
+            }
+          }
+          body=`<div class="wlog">
+            <input class="wt" inputmode="decimal" ${dis} value="${latest?esc(latest.w):""}" placeholder="вага" data-wt="${esc(k)}">
+            <span class="wt-unit">кг</span>
+            <span class="wt-date">${dateLbl}</span>
+          </div>${hist}`;
+        }
+
+        html+=`<div class="ex"><div class="ex-head">
+          <div class="ex-ico">${window.exerciseIcon(ex.name)}</div>
+          <div class="ex-tw">
+            <div class="${nameCls}" ${ex.video?`data-video="${esc(ex.video)}"`:""}>${esc(ex.name)}${yt}</div>
+            <div class="badges">${badges}</div>
+          </div></div>${body}</div>`;
+      }
+      appEl.innerHTML=html;
+      appEl.querySelectorAll("[data-video]").forEach(el=>el.addEventListener("click",()=>window.open(el.dataset.video,"_blank","noopener")));
+      appEl.querySelectorAll("input[data-wt]").forEach(inp=>inp.addEventListener("change",e=>recordWeight(e.target.dataset.wt,e.target.value)));
+      appEl.querySelectorAll("[data-hist]").forEach(el=>el.addEventListener("click",()=>{const k=el.dataset.hist;openHist[k]=!openHist[k];renderWorkout();}));
+      appEl.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{ if(confirm("Видалити цей запис?")) deleteEntry(b.dataset.del,b.dataset.d); }));
+    }
+
+    backBtn.addEventListener("click",()=>{ current=null; view="home"; window.scrollTo(0,0); renderHome(); });
+    render();
+  </script>
+</body>
+</html>
