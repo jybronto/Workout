@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f1115" />
-  <title>Журнал ваг · Boreyko UA</title>
+  <title>Тренування · Boreyko UA</title>
   <style>
     :root{
       --bg:#0f1115;--bg2:#171a21;--card:#1c2029;--card2:#232833;--line:#2c313d;
@@ -82,7 +82,7 @@
   <header class="topbar">
     <button id="backBtn" class="icon-btn hidden" aria-label="Назад">‹</button>
     <div class="title-wrap">
-      <span class="topbar-title" id="topTitle">Журнал ваг</span>
+      <span class="topbar-title" id="topTitle">Тренування</span>
       <span class="tag">Boreyko</span>
     </div>
     <button id="authBtn" class="auth-btn">Увійти</button>
@@ -193,7 +193,7 @@
     function findWorkout(id){ for(const b of DATA.blocks) for(const w of b.workouts) if(w.id===id) return w; return null; }
 
     function renderHome(){
-      backBtn.classList.add("hidden"); topTitle.textContent="Журнал ваг"; document.title="Журнал ваг · Boreyko UA";
+      backBtn.classList.add("hidden"); topTitle.textContent="Тренування"; document.title="Тренування · Boreyko UA";
       let html="";
       if(fbReady && !user) html+=`<div class="signin-hint"><b>Увійдіть</b>, щоб записувати ваги — вони зберігаються з датою і синхронізуються між телефоном і комп'ютером. Кнопка «Увійти» вгорі.</div>`;
       else if(!fbReady) html+=`<div class="signin-hint"><b>Firebase не налаштовано.</b> Журнал недоступний.</div>`;
