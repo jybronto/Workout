@@ -63,6 +63,10 @@
       border-radius:10px;padding:10px;font-size:17px;height:var(--tap);text-align:center;font-weight:700}
     .wt:disabled{opacity:.5}
     .wt-unit{color:var(--muted);font-size:14px}
+    .wt-ok{width:var(--tap);height:var(--tap);flex:0 0 auto;border:none;border-radius:10px;
+      background:var(--good);color:#062616;font-size:20px;font-weight:800;cursor:pointer}
+    .wt-ok:disabled{opacity:.5}
+    .wt-ok:active{filter:brightness(1.12)}
     .wt-date{flex:1;min-width:0;font-size:13px;color:var(--muted);text-align:right}
     .wt-date b{color:var(--good)}
     .hist-toggle{margin-top:10px;font-size:13px;color:var(--accent2);cursor:pointer;display:inline-block}
@@ -232,7 +236,7 @@
         else {
           const arr=(log[k]||[]).slice().sort((x,y)=>x.d<y.d?1:-1);
           const latest=arr[0];
-          const dateLbl=latest?`оновлено <b>${fmt(latest.d)}</b>`:`ще не записано`;
+          const dateLbl=latest?`<b>${fmt(latest.d)}</b>`:`ще не записано`;
           const dis=user?"":"disabled";
           let hist="";
           if(arr.length){
@@ -247,6 +251,7 @@
           body=`<div class="wlog">
             <input class="wt" inputmode="decimal" ${dis} value="${latest?esc(latest.w):""}" placeholder="вага" data-wt="${esc(k)}">
             <span class="wt-unit">кг</span>
+            <button class="wt-ok" ${dis} data-ok="${esc(k)}" aria-label="Підтвердити">✓</button>
             <span class="wt-date">${dateLbl}</span>
           </div>${hist}`;
         }
@@ -261,6 +266,7 @@
       appEl.innerHTML=html;
       appEl.querySelectorAll("[data-video]").forEach(el=>el.addEventListener("click",()=>window.open(el.dataset.video,"_blank","noopener")));
       appEl.querySelectorAll("input[data-wt]").forEach(inp=>inp.addEventListener("change",e=>recordWeight(e.target.dataset.wt,e.target.value)));
+      appEl.querySelectorAll("[data-ok]").forEach(b=>b.addEventListener("click",()=>{const inp=b.closest(".wlog").querySelector("input[data-wt]"); recordWeight(b.dataset.ok, inp.value);}));
       appEl.querySelectorAll("[data-hist]").forEach(el=>el.addEventListener("click",()=>{const k=el.dataset.hist;openHist[k]=!openHist[k];renderWorkout();}));
       appEl.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{ if(confirm("Видалити цей запис?")) deleteEntry(b.dataset.del,b.dataset.d); }));
     }
