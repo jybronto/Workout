@@ -12,7 +12,7 @@ import {
   enableIndexedDbPersistence, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const APP_VERSION = "v13"; // повышается при каждом пуше — видно, что обновление доехало
+const APP_VERSION = "v14"; // повышается при каждом пуше — видно, что обновление доехало
 
 const DATA = window.WORKOUT_DATA;
 const $ = (s, r = document) => r.querySelector(s);
